@@ -1,0 +1,663 @@
+﻿@using CsChat.Model;
+@model  LoginUser
+@{
+    Layout = null;
+    //ViewBag.Title = "";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+    <meta http-equiv="Cache-Control" content="max-age=86400" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>kefu</title>
+    <link rel="stylesheet" href="~/css/reset.css" />
+    <link href="~/css/chat.css" rel="stylesheet" />
+
+    <script src="~/scripts/jquery-3.1.1.min.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.2.2.js"></script>
+    <script src="~/signalr/hubs"></script>
+    <script src="~/scripts/avalon.js"></script>
+</head>
+<body>
+    <div class="kefu" ms-controller="chat">
+        <div class="kf-head">
+            <a class="kf-back" ms-click="chatBack" href="javascript:void(0);">聊天列表</a>
+            <h2>{{clientName}}</h2>
+            <a class="kf-history-btn" ms-click="kfHistory" href="javascript:void(0);">历史记录</a>
+        </div>
+        <!-- 消息 -->
+        <div class="message-box" ms-controller="mView">
+            <!-- 消息展示 -->
+            <div class="message-view-box" ms-scroll="addMessage">
+                <ul class="message-view">
+                    <li class="more-message" ms-click="addMessage"><span>查看更多消息</span></li>
+                    <li ms-repeat-el="messageArr" ms-class="message-list {{el.MStatus}}" ms-if-loop="el">
+                        <div ms-if="el.MType != 'ftime'" ms-class="{{el.MType}}">
+                            <img ms-attr-src="{{el.Img}}">
+                        </div>
+                        <p ms-class="{{el.MType}}" ms-if="el.ContType == 'text'">{{el.Cont}}</p>
+                        <p ms-class="{{el.MType}}" ms-if="el.ContType == 'img'"><img ms-attr-src="{{el.Cont}}" ms-click="imgMagnify"></p>
+                        <span ms-class="{{el.MType}}"></span>
+                    </li>
+                </ul>
+            </div>
+            <!-- 编辑消息 -->
+            <div class="message-editor" ms-controller="em">
+
+                <!-- 发送图片 -->
+                <form id="submit_form" method="POST" action="/base/UploadImage?mark=chat&1=1" target="exec_target" enctype="multipart/form-data">
+                    <label class="upload_file" for="upload_file"></label>
+                    <input type="file" name="upload_file" id="upload_file" accept="image/gif,image/jpeg,image/jpg,image/png,image/svg" ms-change="imgChange">
+                    <img style="display: none;" src="" id="imgview">
+                </form>
+                <iframe style="display: none;" id="exec_target" name="exec_target" ms-on-load="imgSubmit"></iframe>
+
+                <!-- 编辑内容 -->
+                <input type="text" name="" class="eText" ms-duplex-string="mmm" ms-keydown="keyFn(mmm,$event)">
+                <!-- 发送按钮 -->
+                <input class="send-button" type="button" name="" value="发送" ms-click="sendMs(mmm)">
+            </div>
+        </div>
+        <!-- 历史 -->
+        <div class="message-history">
+            <div class="kf-head">
+                <a class="kf-back" ms-click="historyBack" href="javascript:void(0);">返回</a>
+            </div>
+            <div class="history-message-box">
+                <ul class="history-message">
+                    <li class="more-history" ms-click="historyMore"><span>查看更多消息</span></li>
+                    <li ms-repeat-el="historyMessage" ms-class="message-list {{el.MStatus}}" ms-if-loop="el">
+                        <div ms-if="el.MType != 'ftime'" ms-class="{{el.MType}}">
+                            <img ms-attr-src="{{el.Img}}">
+                        </div>
+                        <p ms-class="{{el.MType}}" ms-if="el.ContType == 'text'">{{el.Cont}}</p>
+                        <p ms-class="{{el.MType}}" ms-if="el.ContType == 'img'"><img ms-attr-src="{{el.Cont}}" ms-click="imgMagnify"></p>
+                        <span ms-class="{{el.MType}}"></span>
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+
+        <!-- 聊天列表 -->
+        <div class="chat-page">
+            <div class="cp-mask" ms-click="maskClick"></div>
+            <div class="chat-box">
+                <ul class="chat-list-view">
+                    <li ms-repeat-el="chatArr" ms-class="chat-list {{el.Message}} {{el.Status}}" ms-click="listClick(el)"><div class="cl-head"><img ms-attr-src="{{el.Img}}"><i ms-if="el.Message == 'unread'"></i></div><h3>{{el.Name}}</h3></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 大图展示 -->
+        <div class="imgScale">
+            <div ms-click="imgHide"></div>
+            <img ms-attr-src="{{imgScaleSrc}}" id="imgScale">
+        </div>
+    </div>
+    <script src="~/js/my.js"></script>
+    <script type="text/javascript">
+        //交谈关系
+        var relationUser = "";
+        var userObj =  {
+            ID:@Model.ID,
+            Name:"@(Model.Name)",
+            Img:"@(Model.Img)",
+        };
+        var searchTime=null;
+        var searchIndex=null;
+
+        avalon.ready(function () {
+            function moveBottom() {
+                $('.message-view-box')[0].scrollTop = $('.message-view-box')[0].scrollHeight - $('.message-view-box')[0].clientHeight
+            }
+            // 全局
+            var chat = avalon.define({
+                $id: 'chat',
+                historyMessage: [],
+                imgScaleSrc: "",
+                // 上传图片
+                imgChange: function () {
+                    $('#imgview')[0].src = window.URL.createObjectURL(this.files[0]);
+                    $('#imgview')[0].onload = function () {
+                        var img = new Image();
+                        img.src = this.src;
+                        window.URL.revokeObjectURL(this.src);
+                        var urlData = $('#submit_form').attr('action') + '?width=' + img.width + '&height=' + img.height;
+                        console.log(urlData);
+                        $('#submit_form').attr('action', urlData);
+                        img.remove();
+                        $('#submit_form').submit();
+                    }
+                },
+                // 加载图片
+                imgSubmit: function () {
+                    var url = $(window.frames['exec_target'].document.body).html();              
+                    var guid=newGuid();
+                    $.ajax(
+                        {
+                            url:"/chat/AddImage",
+                            data:{ id: guid, message: url, relationId: relationUser.RelationID },
+                            success:function (data) {
+                                if (data.Result) {                                  
+                                    vm.messageArr.push({ RecordID: guid, MStatus: "sended", MType: "fr", ContType: "img", Cont: url, Img: userObj.Img });
+                                    //发送消息
+                                    chatHub.server.sendMessage(guid, url, relationUser.ID,true);
+                                    chatHub.server.notityHadSendMessage(guid, text, relationUser.ID,true);  
+                                }
+                                else {
+                                    //修改消息状态
+                                    $(vm.messageArr).each(function (y, item) {
+                                        if (item.$model.RecordID == guid) {
+                                            vm.messageArr[y].MStatus = 'sendfail';
+                                        }
+                                    })
+                                    //修改状态
+                                    alert(data.Append);
+                                }
+                            }
+                        });
+                    setTimeout(moveBottom, 80);
+                },
+                // 图片放大、拖拽
+                imgMagnify: function () {
+                    chat.imgScaleSrc = this.src;
+                    $('.imgScale img').css({ 'left': '0', 'top': '0' });
+                    $('.imgScale').show();
+                },
+                imgHide: function () {
+                    $('.imgScale').hide();
+                },
+
+                clickJudge: true,
+                clientName: "",
+                // 展开聊天列表
+                chatBack: function () {
+                    // 防止过快重复点击
+                    if (chat.clickJudge) {
+                        chat.clickJudge = false;
+                        $('.chat-page').show();
+                        $('.chat-box').animate({
+                            "left": 0,
+                        }, 500, function () {
+                            chat.clickJudge = true;
+                        });
+
+                        // 排序：未读置顶
+                        chat.chatArr.forEach(function (el, i) {
+                            if (el.message == "unread") {
+                                var obj = el;
+                                chat.chatArr.removeAt(i);
+                                chat.chatArr.unshift(obj);
+                            }
+                        })
+                    }
+                },
+                // 收起聊天列表
+                maskClick: function () {
+                    if (chat.clickJudge) {
+                        chat.clickJudge = false;
+                        $('.chat-box').animate({
+                            "left": "-100%",
+                        }, 300, function () {
+                            $('.chat-page').hide();
+                        });
+                        setTimeout(function () {
+                            chat.clickJudge = true;
+                        }, 500)
+                    }
+                },
+                // 选择聊天对象
+                listClick: function (obj) {
+                    chat.maskClick();
+
+                    // 打开新聊天
+                    console.log(obj);
+                    chat.clientName = obj.Name;
+
+                    relationUser=obj.$model;
+                    searchTime=CurentTime();
+                    searchIndex=0;
+                    //修改消息状态
+                    $(chat.chatArr).each(function (y, item) {
+                        if (item.$model.UserID == relationUser.UserID) {
+                            item.Message="readed";
+                        }
+                    })
+
+                    $.ajax({
+                        url:"/Chat/GetRecord",
+                        data:{ time: searchTime, relationId: relationUser.RelationID,searchId:searchIndex },
+                        success:function (data)
+                        {
+                            if (data.Code == 0) {
+                                vm.messageArr=new Array();
+                                if(data.Result.length!=20)
+                                {
+                                    $(".more-message span").text("以下是最新消息").attr("disabled",true);
+                                }
+                                else if(data.Result.length==20)
+                                {
+                                    $(".more-message span").text("加载更多").removeAttr("disabled");
+                                }
+                                $(data.Result).each(function (index, item) {
+                                    //两分钟未回复，增加时间
+                                    if ((Date.parse(new Date(searchTime)) - GetJsonTimeSpan(item.SendTime)) / 1000 > 120) {
+                                        vm.messageArr.unshift({ MType: 'ftime', Cont: RenderTime(item.SendTime) });
+                                    }
+                                    searchTime = RenderTime(item.SendTime);
+                                    searchIndex=item.ID;
+
+                                    vm.messageArr.push({ RecordID: item.GuID, MStatus: "sended", MType: item.SendUserID!=userObj.ID? "fl":"fr", ContType: "text", Cont: item.Content, Img:item.SendUserID!=userObj.ID? relationUser.Img:userObj.Img });
+
+                                })
+                            }
+                            else {
+                                alert(data.Append);
+                            }
+                        }});
+                    $.ajax({
+                             url:"/chat/SetReadList",
+                             data:{  relationId: relationUser.RelationID },
+                             success:function (data) {
+                             }
+                            });
+                },
+                chatArr: [
+                ],
+                // 打开历史记录
+                kfHistory: function () {
+                    $('.message-history').fadeIn(300);
+                    chat.historyMessage = [];
+                    searchTime=CurentTime();
+                    searchIndex=0;
+                    $.ajax({
+                        url:"/Chat/GetRecord",
+                        data:{ time: searchTime, relationId: relationUser.RelationID,searchId:searchIndex },
+                        success:function (data)
+                        {
+                            if (data.Code == 0) {
+                                if(data.Result.length!=20)
+                                {
+                                    $(".more-history span").text("以下是最新消息").attr("disabled",true);
+                                }
+                                else if(data.Result.length==20)
+                                {
+                                    $(".more-history span").text("加载更多").removeAttr("disabled");
+                                }
+                                $(data.Result).each(function (index, item) {
+                                    if(index==0)
+                                    {
+                                        chat.historyMessage.push({MStatus: "", MType: "ftime", Cont: RenderTime(item.SendTime)});
+                                    }
+                                        //两分钟未回复，增加时间
+                                    else if ((Date.parse(new Date(searchTime)) - GetJsonTimeSpan(item.SendTime)) / 1000 > 120) 
+                                    {
+                                        chat.historyMessage.push({ MType: 'ftime', Cont: RenderTime(item.SendTime) });
+                                    }
+                                    searchTime = RenderTime(item.SendTime);
+                                    searchIndex=item.ID;
+
+                                    chat.historyMessage.push({ RecordID: item.GuID, MStatus: "sended"+" "+(item.SendUserID!=userObj.ID&&!relationUser.IsOnLine?"offline":"online"), MType: item.SendUserID!=userObj.ID? "fl":"fr", ContType: item.RecordCode==1?"text":"img", Cont: item.Content, Img:item.SendUserID!=userObj.ID? relationUser.Img:userObj.Img });
+
+                                })
+                            }
+                            else {
+                                alert(data.Append);
+                            }
+                        }});
+                },
+                // 加载历史消息
+                historyMore: function () {
+                    if (chat.clickJudge) {
+                        chat.clickJudge = false;
+                        var that = $('.history-message-box');
+                        var oldTop = that[0].scrollHeight;
+                        console.log(oldTop);
+                      
+                        $.ajax({
+                            url:"/Chat/GetRecord",
+                            data:{ time: searchTime, relationId: relationUser.RelationID,searchId:searchIndex },
+                            success:function (data)
+                            {
+                                if (data.Code == 0) {
+                                    if(data.Result.length!=20)
+                                    {
+                                        $(".more-history span").text("以下是最新消息").attr("disabled",true);
+                                    }
+                                    else if(data.Result.length==20)
+                                    {
+                                        $(".more-history span").text("加载更多").removeAttr("disabled");
+                                    }
+                                    $(data.Result).each(function (index, item) {
+                                        //两分钟未回复，增加时间
+                                        if ((Date.parse(new Date(searchTime)) - GetJsonTimeSpan(item.SendTime)) / 1000 > 120) {
+                                            chat.historyMessage.push({ MType: 'ftime', Cont: RenderTime(item.SendTime) });
+                                        }
+                                        searchTime = RenderTime(item.SendTime);
+                                        searchIndex=item.ID;
+
+                                        chat.historyMessage.push({ RecordID: item.GuID, MStatus: "sended", MType: item.SendUserID!=userObj.ID? "fl":"fr", ContType: "text", Cont: item.Content, Img:item.SendUserID!=userObj.ID? relationUser.Img:userObj.Img });
+
+                                    })
+                                }
+                                else {
+                                    alert(data.Append);
+                                }
+                            }});
+                        setTimeout(function () {
+                            that.scrollTop(that[0].scrollHeight - oldTop - that.height() * 0.5);
+                            console.log(that[0].scrollHeight);
+                            chat.clickJudge = true;
+                        }, 300);
+                    }
+
+                },
+                // 返回
+                historyBack: function () {
+                    $('.message-history').fadeOut(300);
+                },
+            })
+
+            // 消息栏
+            var vm = avalon.define({
+                $id: "mView",
+                messageArr: [
+                ],
+                scrollJudge: 0,
+                oldTop: 0,
+                // 下拉加载
+                addMessage: function () {
+                    if ($(this).scrollTop() < 20) {
+                        var that = $('.message-view-box');
+                        // console.log(that);
+                        if ($(this).hasClass('more-message')) {
+                            vm.oldTop = that[0].scrollHeight;
+                            vm.scrollJudge = 2;
+                            // console.log(vm.oldTop)
+                        }
+                        if (vm.scrollJudge == 0) {
+                            vm.scrollJudge = 1;
+                            setTimeout(function () {
+                                that.scrollTop(20);
+                                vm.scrollJudge = 2;
+                                vm.oldTop = that[0].scrollHeight;
+                                console.log(vm.oldTop)
+                            }, 500)
+                        } else if (vm.scrollJudge == 2) {
+                            vm.scrollJudge = 3;
+                            //获取聊天记录
+                            if(searchTime==null)
+                            {
+                                searchTime=CurentTime();
+                            }
+                            $.ajax({
+                                url:"/Chat/GetRecord",
+                                data:{ time: searchTime, relationId: relationUser.RelationID,searchId:searchIndex },
+                                success:function (data)
+                                {
+                                    if (data.Code == 0) {
+                                        if(data.Result.length!=20)
+                                        {
+                                            $(".more-message span").text("以下是最新消息").attr("disabled",true);
+                                        }
+                                        $(data.Result).each(function (index, item) {
+                                            //两分钟未回复，增加时间
+                                            if ((Date.parse(new Date(searchTime)) - GetJsonTimeSpan(item.SendTime)) / 1000 > 120) {
+                                                vm.messageArr.push({ mType: 'ftime', cont: RenderTime(item.SendTime) });
+                                            }
+                                            searchTime = RenderTime(item.SendTime);
+                                            searchIndex=item.ID;
+                                            vm.messageArr.push({ RecordID: item.GuID, MStatus: "sended", MType: item.SendUserID!=userObj.ID? "fl":"fr", ContType: "text", Cont: item.Content, Img:item.SendUserID!=userObj.ID? relationUser.Img:userObj.Img });
+
+                                        })
+                                    }
+                                    else {
+                                        alert(data.Append);
+                                    }
+                                }});
+
+                            // 设置滚动条当前位置
+                            setTimeout(function () {
+                                // console.log(that[0].scrollHeight - vm.oldTop);
+                                that.scrollTop(that[0].scrollHeight - vm.oldTop - that.height() * 0.5);
+                                if (that.scrollTop() == 0) {
+                                    that.scrollTop(20);
+                                }
+                            }, 300);
+                            setTimeout(function () {
+                                vm.scrollJudge = 0;
+                            }, 1000)
+                        }
+                    }
+                }
+
+            })
+            // 编辑栏
+            var vm1 = avalon.define({
+                $id: "em",
+                mmm: '',
+                keyFn: function (a, e) {
+                    if (e.key == "Enter") {
+                        vm1.sendMs(a);
+                    }
+                },
+                sendMs: function (text) {
+                    if (text.length <= 0) return false;
+                    for (var i = 0; i < text.length; i++) {
+                        if (text[i] !== ' ') {
+                            var guid=newGuid();
+                            // 发送消息
+                            vm.messageArr.push({ RecordID: guid, MStatus: "sending", MType: "fr", ContType: "text", Cont: text, Img: userObj.Img });
+                            vm1.mmm = "";
+                            setTimeout(moveBottom, 80);
+
+                            $.ajax(
+                                {
+                                url:"/chat/addText",
+                                data:{ id: guid, message: text, relationId: relationUser.RelationID },
+                                success:function (data) {
+                                    if (data.Result) {
+                                        //修改消息状态
+                                        $(vm.messageArr).each(function (y, item) {
+                                            if (item.$model.RecordID == guid) {
+                                                vm.messageArr[y].MStatus = 'sended';
+                                            }
+                                        })
+                                        //发送消息
+                                        chatHub.server.sendMessage(guid, text, relationUser.ID,false);
+                                        chatHub.server.notityHadSendMessage(guid, text, relationUser.ID,false);                                   
+                                    }
+                                    else {
+                                        //修改消息状态
+                                        $(vm.messageArr).each(function (y, item) {
+                                            if (item.$model.RecordID == guid) {
+                                                vm.messageArr[y].MStatus = 'sendfail';
+                                            }
+                                        })
+                                        //修改状态
+                                        alert(data.Append);
+                                    }
+                                }
+                                });
+                            return false;
+                        } else {
+                            if (i == a.length - 1) {
+                                vm1.mmm = "";
+                                return false;
+                            }
+                        }
+                    }
+                }
+            })
+            //数据初始化
+            $.ajax({
+                url:"/chat/init",
+                success:function(data){
+                    if(data.Code==0)
+                    {
+                        $(data.Result).each(function(index,item){
+                            if(index==0)
+                            {
+                                //对象赋值
+                                relationUser=item;
+                                chat.clientName=item.Name;
+                                if(searchTime==null)
+                                {
+                                    searchTime=CurentTime();
+                                }
+                                if(item.RecordList.length!=10)
+                                {
+                                    $(".more-message span").text("以下是最新消息").attr("disabled",true);
+                                }
+                                if(item.RecordList!=null)
+                                {
+                                    $(item.RecordList).each(function(y,obj){
+                                        if(y==0)
+                                        {
+                                            vm.messageArr.push({RecordID: null, MStatus: "", MType: "ftime", ContType: "text", Cont: RenderTime(obj.SendTime), Img: null});
+                                        }
+                                        else
+                                        {
+                                            //两分钟未回复，增加时间
+                                            if ((Date.parse(new Date(searchTime)) - GetJsonTimeSpan(obj.SendTime)) / 1000 > 120) {
+                                                vm.messageArr.push({RecordID: null, MStatus: "", MType: "ftime", ContType: "text", Cont: RenderTime(obj.SendTime), Img: null});
+                                            }
+                                        }
+                                        
+                                        searchTime = RenderTime(obj.SendTime);
+                                        searchIndex= obj.ID;
+                                        vm.messageArr.push({ RecordID: obj.GuID, MStatus: "sended"+" "+(obj.SendUserID!=userObj.ID&&!item.IsOnLine?"offline":"online"), MType: obj.SendUserID!=userObj.ID? "fl":"fr", ContType: obj.RecordCode==1?"text":"img", Cont: obj.Content, Img:obj.SendUserID!=userObj.ID? relationUser.Img:userObj.Img });
+                                    });
+                                }
+                            }
+                            chat.chatArr.push({ UserID: item.ID,RelationID:item.RelationID, Status:item.IsOnLine?"online":"offline", Message:item.IsHadNoReadMsg?"unread":"readed", Img: item.Img, Name: item.Name });
+                        })
+                    }
+                    else
+                    {
+
+                    }
+                }
+            })
+
+            avalon.scan();
+            setTimeout(moveBottom, 80);
+
+
+            $.connection.hub.logging = true;
+            $.connection.hub.start()
+                .done(function (data) {
+                    console.log("当前clientID=" + data.id);
+                    chatHub.server.setRecGroup(1);//加入用户组
+                })
+                .fail(function() { console.log("Could not Connect!"); });;
+
+            var chatHub=$.connection.ChatHub;
+            ////错误弹出框
+            chatHub.client.showError = function (msg) {
+                alert(msg);
+            }
+            ////显示消息
+            chatHub.client.notifyNewMessage=function (obj)
+            {
+                //当前正在聊天用户消息
+                if(obj.ToUserID==userObj.ID)
+                {
+                    if (obj.Message!== ' ') {
+                        // 发送消息
+                        vm.messageArr.push({ RecordID: obj.GuID, MStatus: "sended", MType: 'fl', Cont: obj.Message ,ContType:obj.isImages?"img":"text",Img:relationUser.Img});
+                        setTimeout(moveBottom, 80);
+                        return false;
+                    }
+                }
+                else{
+
+                }
+            }
+
+            //用户发送消息
+            chatHub.client.notifyHadSendMessage=function (obj)
+            {
+                //当前正在聊天用户消息
+                if(obj.From==userObj.ID)
+                {
+                    if (obj.Message!== ' ') {
+                        // 发送消息
+                        vm.messageArr.push({ RecordID: obj.GuID, MStatus: "sended", MType: 'fr', Cont: obj.Message ,ContType:obj.isImages?"img":"text",Img:userObj.Img});
+                        setTimeout(moveBottom, 80);
+                        return false;
+                    }
+                }
+                else{
+
+                }
+            }
+            //提醒上线
+            chatHub.client.NotifyOnLine=function (userId)
+            {
+                var onLineUser=null;
+                var index=0;
+                //修改消息状态
+                $(chat.chatArr).each(function (y, item) {
+                    if (item.$model.UserID == userId) {
+                        onLineUser=chat.chatArr[y];
+                        index=y;
+                    }
+                })
+
+                if(onLineUser!=null)
+                {
+                    chat.chatArr.removeAt(index);
+                    onLineUser.Status="online";
+                    chat.chatArr.splice(0,0,onLineUser);
+                }
+            }
+            //提醒下线
+            chatHub.client.NotifyOffLine=function (userId)
+            {
+                //刷新用户列表
+                var onLineUser=null;
+                //修改消息状态
+                $(chat.chatArr).each(function (y, item) {
+                    if (item.$model.UserID == userId) {
+                        chat.chatArr[y].Status="offline";
+                    }
+                })
+            }
+        })
+
+
+    </script>
+
+
+
+    <!-- 自适应 -->
+    <script type="text/javascript">
+        $(function () {
+            $(window).resize(infinite);
+            function infinite() {
+                var htmlWidth = $('html').width();
+                if (htmlWidth >= 650) {
+                    $("html").css({
+                        "font-size": "24px"
+                    });
+                } else if (htmlWidth <= 320) {
+                    $("html").css({
+                        "font-size": "12px"
+                    });
+                } else {
+                    $("html").css({
+                        "font-size": 12 / 320 * htmlWidth + "px"
+                    });
+                }
+            } infinite();
+        })
+    </script>
+</body>
+</html>

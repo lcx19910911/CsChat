@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsChat.Web", "CsChat.Web\CsChat.Web.csproj", "{B8FF8CAF-50AC-45E7-8E5E-E1F6AA01F715}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsChat.Model", "CsChat.Model\CsChat.Model.csproj", "{A82CB1B4-E599-4D0A-98DD-5870448CB7C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsChat.Respository", "CsChat.Respository\CsChat.Respository.csproj", "{C32B409C-F2DF-4BEA-BFE3-D90F9986557A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsChat.Core", "CsChat.Core\CsChat.Core.csproj", "{64B2FF31-185D-481D-BA51-EFF5427487C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsChat.Domain", "CsChat.Domain\CsChat.Domain.csproj", "{5A9613D1-DF57-4E11-A1E1-98ADA3044F89}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsChat.IService", "CsChat.IService\CsChat.IService.csproj", "{447BF79A-1754-4AC9-B0B2-22AF6BDE85D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsChat.Service", "CsChat.Service\CsChat.Service.csproj", "{18B97D54-7B39-452F-9DF0-5886AB406CFF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B8FF8CAF-50AC-45E7-8E5E-E1F6AA01F715}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8FF8CAF-50AC-45E7-8E5E-E1F6AA01F715}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8FF8CAF-50AC-45E7-8E5E-E1F6AA01F715}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8FF8CAF-50AC-45E7-8E5E-E1F6AA01F715}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A82CB1B4-E599-4D0A-98DD-5870448CB7C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A82CB1B4-E599-4D0A-98DD-5870448CB7C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A82CB1B4-E599-4D0A-98DD-5870448CB7C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A82CB1B4-E599-4D0A-98DD-5870448CB7C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C32B409C-F2DF-4BEA-BFE3-D90F9986557A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C32B409C-F2DF-4BEA-BFE3-D90F9986557A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C32B409C-F2DF-4BEA-BFE3-D90F9986557A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C32B409C-F2DF-4BEA-BFE3-D90F9986557A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64B2FF31-185D-481D-BA51-EFF5427487C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64B2FF31-185D-481D-BA51-EFF5427487C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64B2FF31-185D-481D-BA51-EFF5427487C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64B2FF31-185D-481D-BA51-EFF5427487C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A9613D1-DF57-4E11-A1E1-98ADA3044F89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A9613D1-DF57-4E11-A1E1-98ADA3044F89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A9613D1-DF57-4E11-A1E1-98ADA3044F89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A9613D1-DF57-4E11-A1E1-98ADA3044F89}.Release|Any CPU.Build.0 = Release|Any CPU
+		{447BF79A-1754-4AC9-B0B2-22AF6BDE85D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{447BF79A-1754-4AC9-B0B2-22AF6BDE85D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{447BF79A-1754-4AC9-B0B2-22AF6BDE85D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{447BF79A-1754-4AC9-B0B2-22AF6BDE85D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18B97D54-7B39-452F-9DF0-5886AB406CFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18B97D54-7B39-452F-9DF0-5886AB406CFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18B97D54-7B39-452F-9DF0-5886AB406CFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18B97D54-7B39-452F-9DF0-5886AB406CFF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

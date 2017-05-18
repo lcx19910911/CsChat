@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head runat="server">
+    <title>进度条</title>
+    <script src="~/scripts/jquery-3.1.1.min.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.2.2.js"></script>
+    <script src="~/signalr/hubs"></script>
+</head>
+<body>
+    <div id="loading" style="width: 0%;">Loading</div>
+    <input id="submit" type="button" value="Start" />
+
+    <input id="btnOne" type="button" value="用户1" />
+
+    <input id="btnTwo" type="button" value="用户2" />
+    <script>
+        (function () {
+            var connectId = "1";
+            $("#btnTwo").click(function () {
+                connectId = "2";
+            })
+            $("#btnOne").click(function () {
+                connectId = "1";
+            })
+            //接收信息
+            var curHub = $.connection.curHub;//对应后台的类CurHub
+            curHub.client.notify = function (msg) {
+                $("#loading").css({ "background-color": "blue", "width": Number(msg) + "%" });
+            };
+            $.connection.hub.start().done(function () {
+                var obj=curHub.server.setRecGroup("clientId");//设置接收组,该方法对应后台的类CurHub的SetRecGroup
+            });
+
+            
+            curHub.client.NotifySendMessage = function (obj) {
+                //debugger
+                //$("#loading").css({ "background-color": "blue", "width": Number(obj.) + "%" });
+                console.log(obj);
+            };
+
+            curHub.client.notify = function (msg) {
+                $("#loading").css({ "background-color": "blue", "width": Number(msg) + "%" });
+            };
+
+            $("#submit").click(function () {
+                curHub.server.setRecGroup("clientId")
+            });
+
+        })();
+    </script>
+</body>
+</html>  
