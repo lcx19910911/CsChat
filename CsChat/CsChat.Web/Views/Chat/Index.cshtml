@@ -153,8 +153,8 @@
                                 else {
                                     //修改消息状态
                                     $(vm.messageArr).each(function (y, item) {
-                                        if (item.$model.RecordID == guid) {
-                                            vm.messageArr[y].MStatus = 'sendfail';
+                                        if (item.RecordID == guid) {
+                                            item.MStatus = 'sendfail';
                                         }
                                     })
                                     //修改状态
@@ -190,7 +190,7 @@
 
                         // 排序：未读置顶
                         chat.chatArr.forEach(function (el, i) {
-                            if (el.message == "unread") {
+                            if (el.Message == "unread") {
                                 var obj = el;
                                 chat.chatArr.removeAt(i);
                                 chat.chatArr.unshift(obj);
@@ -225,7 +225,7 @@
                     searchIndex=0;
                     //修改消息状态
                     $(chat.chatArr).each(function (y, item) {
-                        if (item.$model.UserID == relationUser.UserID) {
+                        if (item.UserID == relationUser.UserID) {
                             item.Message="readed";
                         }
                     })
@@ -236,6 +236,8 @@
                         success:function (data)
                         {
                             if (data.Code == 0) {
+                                
+                                chatHub.server.setReaded(relationUser.ID);
                                 vm.messageArr=new Array();
                                 if(data.Result.length!=20)
                                 {
@@ -261,12 +263,6 @@
                                 alert(data.Append);
                             }
                         }});
-                    $.ajax({
-                             url:"/chat/SetReadList",
-                             data:{  relationId: relationUser.RelationID },
-                             success:function (data) {
-                             }
-                            });
                 },
                 chatArr: [
                 ],
@@ -294,15 +290,13 @@
                                     if(index==0)
                                     {
                                         chat.historyMessage.push({MStatus: "", MType: "ftime", Cont: RenderTime(item.SendTime)});
-                                    }
-                                        //两分钟未回复，增加时间
+                                    } //两分钟未回复，增加时间
                                     else if ((Date.parse(new Date(searchTime)) - GetJsonTimeSpan(item.SendTime)) / 1000 > 120) 
                                     {
                                         chat.historyMessage.push({ MType: 'ftime', Cont: RenderTime(item.SendTime) });
                                     }
                                     searchTime = RenderTime(item.SendTime);
                                     searchIndex=item.ID;
-
                                     chat.historyMessage.push({ RecordID: item.GuID, MStatus: "sended"+" "+(item.SendUserID!=userObj.ID&&!relationUser.IsOnLine?"offline":"online"), MType: item.SendUserID!=userObj.ID? "fl":"fr", ContType: item.RecordCode==1?"text":"img", Cont: item.Content, Img:item.SendUserID!=userObj.ID? relationUser.Img:userObj.Img });
 
                                 })
@@ -465,8 +459,8 @@
                                     if (data.Result) {
                                         //修改消息状态
                                         $(vm.messageArr).each(function (y, item) {
-                                            if (item.$model.RecordID == guid) {
-                                                vm.messageArr[y].MStatus = 'sended';
+                                            if (item.RecordID == guid) {
+                                                item.MStatus = 'sended';
                                             }
                                         })
                                         //发送消息
@@ -476,8 +470,8 @@
                                     else {
                                         //修改消息状态
                                         $(vm.messageArr).each(function (y, item) {
-                                            if (item.$model.RecordID == guid) {
-                                                vm.messageArr[y].MStatus = 'sendfail';
+                                            if (item.RecordID == guid) {
+                                                item.MStatus = 'sendfail';
                                             }
                                         })
                                         //修改状态
@@ -529,10 +523,10 @@
                                                 vm.messageArr.push({RecordID: null, MStatus: "", MType: "ftime", ContType: "text", Cont: RenderTime(obj.SendTime), Img: null});
                                             }
                                         }
-                                        
                                         searchTime = RenderTime(obj.SendTime);
                                         searchIndex= obj.ID;
-                                        vm.messageArr.push({ RecordID: obj.GuID, MStatus: "sended"+" "+(obj.SendUserID!=userObj.ID&&!item.IsOnLine?"offline":"online"), MType: obj.SendUserID!=userObj.ID? "fl":"fr", ContType: obj.RecordCode==1?"text":"img", Cont: obj.Content, Img:obj.SendUserID!=userObj.ID? relationUser.Img:userObj.Img });
+                                        console.log((obj.SendUserID!=userObj.ID? relationUser.Img:userObj.Img));
+                                        vm.messageArr.push({ RecordID: obj.GuID, MStatus: "sended"+" "+(obj.SendUserID!=userObj.ID&&!item.IsOnLine?"offline":"online"), MType: obj.SendUserID!=userObj.ID? "fl":"fr", ContType: obj.RecordCode==1?"text":"img", Cont: obj.Content, Img:(obj.SendUserID!=userObj.ID? relationUser.Img:userObj.Img) });
                                     });
                                 }
                             }
@@ -553,22 +547,22 @@
             $.connection.hub.logging = true;
             $.connection.hub.start()
                 .done(function (data) {
-                    console.log("当前clientID=" + data.id);
-                    chatHub.server.setRecGroup(1);//加入用户组
+                    //console.log("当前clientID=" + data.id);
                 })
                 .fail(function() { console.log("Could not Connect!"); });;
 
             var chatHub=$.connection.ChatHub;
             ////错误弹出框
-            chatHub.client.showError = function (msg) {
+            chatHub.client.ShowError = function (msg) {
                 alert(msg);
             }
             ////显示消息
-            chatHub.client.notifyNewMessage=function (obj)
+            chatHub.client.NotifyNewMessage=function (obj)
             {
                 //当前正在聊天用户消息
                 if(obj.ToUserID==userObj.ID)
-                {
+                {               
+                    chatHub.server.setReaded(relationUser.ID);
                     if (obj.Message!== ' ') {
                         // 发送消息
                         vm.messageArr.push({ RecordID: obj.GuID, MStatus: "sended", MType: 'fl', Cont: obj.Message ,ContType:obj.isImages?"img":"text",Img:relationUser.Img});
@@ -576,27 +570,46 @@
                         return false;
                     }
                 }
-                else{
-
+                else{                        
+                    // 排序：未读置顶
+                    chat.chatArr.forEach(function(item,i){
+                        if(item.UserID==obj.ToUserID)
+                        {
+                            if(el.Message!="unread")
+                            {
+                                el.Message == "unread";                           
+                                var obj = item;
+                                chat.chatArr.removeAt(i);
+                                chat.chatArr.unshift(obj);
+                            }
+                        }
+                    })
                 }
+
             }
 
             //用户发送消息
-            chatHub.client.notifyHadSendMessage=function (obj)
+            chatHub.client.NotifyHadSendMessage=function (obj)
             {
-                //当前正在聊天用户消息
-                if(obj.From==userObj.ID)
-                {
-                    if (obj.Message!== ' ') {
-                        // 发送消息
-                        vm.messageArr.push({ RecordID: obj.GuID, MStatus: "sended", MType: 'fr', Cont: obj.Message ,ContType:obj.isImages?"img":"text",Img:userObj.Img});
-                        setTimeout(moveBottom, 80);
-                        return false;
+                var isExits=false;
+                vm.messageArr.forEach(function(item,i){
+                    if(item.RecordID==obj.GuID)
+                    {
+                        isExits=true;
                     }
-                }
-                else{
-
-                }
+                });
+                if(!isExits)
+                {
+                    //当前正在聊天用户消息
+                    if(obj.From==userObj.ID)
+                    {
+                        if (obj.Message!== ' ') {
+                            // 发送消息
+                            vm.messageArr.push({ RecordID: obj.GuID, MStatus: "sended", MType: 'fr', Cont: obj.Message ,ContType:obj.isImages?"img":"text",Img:userObj.Img});
+                            setTimeout(moveBottom, 80);
+                            return false;
+                        }
+                    }}
             }
             //提醒上线
             chatHub.client.NotifyOnLine=function (userId)
@@ -605,7 +618,7 @@
                 var index=0;
                 //修改消息状态
                 $(chat.chatArr).each(function (y, item) {
-                    if (item.$model.UserID == userId) {
+                    if (item.UserID == userId) {
                         onLineUser=chat.chatArr[y];
                         index=y;
                     }
@@ -616,6 +629,12 @@
                     chat.chatArr.removeAt(index);
                     onLineUser.Status="online";
                     chat.chatArr.splice(0,0,onLineUser);
+                    $(vm.messageArr).each(function(i,item){
+                        if(item.Img==onLineUser.Img)
+                        {
+                            item.MStatus="sended online";
+                        }
+                    });
                 }
             }
             //提醒下线
@@ -625,10 +644,17 @@
                 var onLineUser=null;
                 //修改消息状态
                 $(chat.chatArr).each(function (y, item) {
-                    if (item.$model.UserID == userId) {
-                        chat.chatArr[y].Status="offline";
+                    if (item.UserID == userId) {
+                        item.Status="offline";
+                        onLineUser=item;
                     }
                 })
+                $(vm.messageArr).each(function(i,item){
+                    if(item.Img==onLineUser.Img)
+                    {
+                        item.MStatus="sended offline";
+                    }
+                });
             }
         })
 

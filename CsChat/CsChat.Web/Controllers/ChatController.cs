@@ -63,7 +63,6 @@ namespace CsChat.Web.Controllers
         /// <param name="userId">链接名</param>
         public void SetRecGroup(int userId)//设置接收组  
         {
-           
             int id = 0;
             if (IUserDeviceService.Add(userId, GetIp(), out id).Result)
                 this.Groups.Add(this.Context.ConnectionId, userId + "_" + id);
@@ -99,7 +98,7 @@ namespace CsChat.Web.Controllers
                     //group组名，用户id_设备id
                     this.Clients.Group(toUserId + "_" + x.ID).NotifyNewMessage(new
                     {
-                        ID = id,
+                        GuID = id,
                         ToUserID = toUserId,
                         From = this.LoginUser.ID,
                         Message = message,
@@ -107,6 +106,15 @@ namespace CsChat.Web.Controllers
                     });//向指定组发送 
                 });
             }
+        }
+
+        /// <summary>
+        /// 设置已读
+        /// </summary>
+        /// <param name="relationId"></param>
+        public void SetReaded(int relationId)
+        {
+            IRecordService.SetReadList(relationId);
         }
 
         /// <summary>
@@ -125,9 +133,9 @@ namespace CsChat.Web.Controllers
                     if (x.IP != GetIp())
                     {
                         //group组名，用户id_设备id
-                        this.Clients.Group(this.LoginUser.ID + "_" + x.ID).NotifyNewMessage(new
+                        this.Clients.Group(this.LoginUser.ID + "_" + x.ID).NotifyHadSendMessage(new
                         {
-                            ID = id,
+                            GuID = id,
                             ToUserID = toUserId,
                             From = this.LoginUser.ID,
                             Message = message,
@@ -375,15 +383,6 @@ namespace CsChat.Web.Controllers
             return JResult(IRecordService.GetPrevList(relationId, time, 20, searchId));
         }
 
-        /// <summary>
-        /// 设置已读
-        /// </summary>
-        /// <param name="relationId"></param>
-        public ActionResult SetReadList(int relationId)
-        {
-            IRecordService.SetReadList(relationId);
-            return JResult(true);
-        }
 
         /// <summary>
         /// 加载聊天记录
