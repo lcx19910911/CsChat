@@ -19,30 +19,6 @@ namespace CsChat.Web.Controllers
     [HubName("ChatHub")]
     public class ChatHub : Hub
     {
-        public void SetRecGroup(string id)//设置接收组  
-        {
-            this.Groups.Add(this.Context.ConnectionId, id);
-            Send(id);
-            for (int i = 0; i < 100; i++)
-            {
-                IHubContext chat = GlobalHost.ConnectionManager.GetHubContext<CurHub>();
-                chat.Clients.Group("clientId").notify(i);//向指定组发送  
-                System.Threading.Thread.Sleep(100);
-            }
-        }
-
-
-        public void Send(string id)
-        {
-            IHubContext chat = GlobalHost.ConnectionManager.GetHubContext<CurHub>();
-            chat.Clients.Group(id).NotifySendMessage(new
-            {
-                ID = 1,
-                RelationID = 2,
-                From = 3,
-                Message = "3234"
-            });//向指定组发送  
-        }
         private LoginUser _loginUser = null;
 
         public LoginUser LoginUser

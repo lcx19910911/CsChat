@@ -51,6 +51,14 @@ namespace CsChat.Web.Filters
             }
             else
             {
+                if (areaName != null)
+                {
+                    if (!controller.LoginUser.Name.Equals("Admin",StringComparison.OrdinalIgnoreCase))
+                    {
+                        RedirectResult redirectResult = new RedirectResult("/login/index?redirecturl=" + requestUrl);
+                        filterContext.Result = redirectResult;
+                    }
+                }
             }
         }
     }

@@ -10,12 +10,21 @@ namespace CsChat.IService
 {
     public interface IRelationGroupService : IBaseService<RelationGroup>
     {
+
         /// <summary>
         /// 获取用户的交谈用户集合
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         List<RelationGroup> GetListByUserID(int userId);
+
+
+        /// <summary>
+        /// 获取用户的交谈用户集合
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        PageList<RelationGroup> GetPageList(int pageIndex, int pageSize, string sendUserName, string toUserName, DateTime? createdTimeStart, DateTime? createdTimeEnd);
 
         /// <summary>
         /// 增加聊天关系

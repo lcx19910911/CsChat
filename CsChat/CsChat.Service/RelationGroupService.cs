@@ -2,8 +2,10 @@
 using CsChat.Core;
 using CsChat.IService;
 using CsChat.Model;
+using CsChat.Repository;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CsChat.Service
 {
@@ -44,6 +46,45 @@ namespace CsChat.Service
                 { 
                     return Result(false, ErrorCode.sys_param_format_error);
                 }
+            }
+        }
+
+        public PageList<RelationGroup> GetPageList(int pageIndex, int pageSize, string sendUserName, string toUserName, DateTime? createdTimeStart, DateTime? createdTimeEnd)
+        {
+            using (DbRepository db = new DbRepository())
+            {
+                var query = db.RelationGroup.Where(x => !x.IsDelete);
+                if (sendUserName.IsNotNullOrEmpty())
+                {
+                    var userIdList = db.User.Where(x => !x.IsDelete & x.Name.Contains(sendUserName)).Select(x => x.ID).ToList();
+                    if (userIdList != null && userIdList.Count > 0)
+                    {
+                        query = query.Where(x => userIdList.Contains(x.UserID) || userIdList.Contains(x.RelationUserID));
+                    }
+                }
+                if (toUserName.IsNotNullOrEmpty())
+                {
+                    var userIdList = db.User.Where(x => !x.IsDelete & x.Name.Contains(toUserName)).Select(x => x.ID).ToList();
+                    if (userIdList != null && userIdList.Count > 0)
+                    {
+                        query = query.Where(x => userIdList.Contains(x.UserID) || userIdList.Contains(x.RelationUserID));
+                    }
+                }
+                if (createdTimeStart != null)
+                {
+                    query = query.Where(x => x.LastTime >= createdTimeStart);
+                }
+                if (createdTimeEnd != null)
+                {
+                    createdTimeEnd = createdTimeEnd.Value.AddDays(1);
+                    query = query.Where(x => x.LastTime < createdTimeEnd);
+                }
+                query = query.OrderByDescending(x => x.CreatedTime).Skip((pageIndex - 1) * pageSize).Take(pageSize);
+
+                var pageList = CreatePageList(query, pageIndex, pageSize);
+
+                return pageList;
+
             }
         }
 

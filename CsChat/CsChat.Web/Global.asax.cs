@@ -14,6 +14,7 @@ using System.Data.Entity.Core.Metadata.Edm;
 using Owin;
 using CsChat.Core;
 using System.Threading;
+using System.Web.Optimization;
 
 namespace CsChat.Web
 {
@@ -25,7 +26,8 @@ namespace CsChat.Web
             AreaRegistration.RegisterAllAreas();
             GlobalConfiguration.Configure(WebApiConfig.Register);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
-
+            //脚本资源注册
+            BundleConfig.RegisterBundles(BundleTable.Bundles);
 
             ///预加载
             using (var dbcontext = new DbRepository())
@@ -48,6 +50,15 @@ namespace CsChat.Web
                         CreatedTime = DateTime.Now,
                         UpdatedTime = DateTime.Now,
                         Name = "zs",
+                        Img = "/Images/avtar.png",
+                        Password = CryptoHelper.MD5_Encrypt("123456"),
+                    });
+
+                    dbcontext.User.Add(new Model.User()
+                    {
+                        CreatedTime = DateTime.Now,
+                        UpdatedTime = DateTime.Now,
+                        Name = "Admin",
                         Img = "/Images/avtar.png",
                         Password = CryptoHelper.MD5_Encrypt("123456"),
                     });
