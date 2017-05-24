@@ -137,6 +137,11 @@
                 },
                 // 加载图片
                 imgSubmit: function () {
+                    if(relationUser==null||relationUser=="")
+                    {
+                        alert("请选择聊天用户");
+                        return false;
+                    }
                     var url = $(window.frames['exec_target'].document.body).html();              
                     var guid=newGuid();
                     $.ajax(
@@ -147,8 +152,8 @@
                                 if (data.Result) {                                  
                                     vm.messageArr.push({ RecordID: guid, MStatus: "sended", MType: "fr", ContType: "img", Cont: url, Img: userObj.Img });
                                     //发送消息
-                                    chatHub.server.sendMessage(guid, url, relationUser.ID,true);
-                                    chatHub.server.notityHadSendMessage(guid, text, relationUser.ID,true);  
+                                    chatHub.server.sendMessage(guid, url, relationUser.RelationID,true);
+                                    chatHub.server.notityHadSendMessage(guid, text, relationUser.RelationID,true);  
                                 }
                                 else {
                                     //修改消息状态
@@ -215,7 +220,8 @@
                 // 选择聊天对象
                 listClick: function (obj) {
                     chat.maskClick();
-
+                    
+                    debugger
                     // 打开新聊天
                     console.log(obj);
                     chat.clientName = obj.Name;
@@ -236,8 +242,7 @@
                         success:function (data)
                         {
                             if (data.Code == 0) {
-                                
-                                chatHub.server.setReaded(relationUser.ID);
+                                chatHub.server.setReaded(relationUser.RelationID);
                                 vm.messageArr=new Array();
                                 if(data.Result.length!=20)
                                 {
@@ -442,6 +447,11 @@
                     }
                 },
                 sendMs: function (text) {
+                    if(relationUser==null||relationUser=="")
+                    {
+                        alert("请选择聊天用户");
+                        return false;
+                    }
                     if (text.length <= 0) return false;
                     for (var i = 0; i < text.length; i++) {
                         if (text[i] !== ' ') {
@@ -464,8 +474,8 @@
                                             }
                                         })
                                         //发送消息
-                                        chatHub.server.sendMessage(guid, text, relationUser.ID,false);
-                                        chatHub.server.notityHadSendMessage(guid, text, relationUser.ID,false);                                   
+                                        chatHub.server.sendMessage(guid, text, relationUser.RelationID,false);
+                                        chatHub.server.notityHadSendMessage(guid, text, relationUser.RelationID,false);                                   
                                     }
                                     else {
                                         //修改消息状态
@@ -535,7 +545,7 @@
                     }
                     else
                     {
-
+                        alert("初始化数据失败");
                     }
                 }
             })
@@ -559,57 +569,92 @@
             ////显示消息
             chatHub.client.NotifyNewMessage=function (obj)
             {
-                //当前正在聊天用户消息
-                if(obj.ToUserID==userObj.ID)
-                {               
-                    chatHub.server.setReaded(relationUser.ID);
-                    if (obj.Message!== ' ') {
-                        // 发送消息
-                        vm.messageArr.push({ RecordID: obj.GuID, MStatus: "sended", MType: 'fl', Cont: obj.Message ,ContType:obj.isImages?"img":"text",Img:relationUser.Img});
-                        setTimeout(moveBottom, 80);
-                        return false;
+                //聊天用户是否存在
+                if(IsExitsUser(obj.ToUserID,obj.From))
+                {
+                    //正在聊天用户
+                    if(obj.ToUserID==userObj.ID&&relationUser!='')
+                    {               
+                        chatHub.server.setReaded(relationUser.RelationID);
+                        if (obj.Message!== ' ') {
+                            // 发送消息
+                            vm.messageArr.push({ RecordID: obj.GuID, MStatus: "sended", MType: 'fl', Cont: obj.Message ,ContType:obj.isImages?"img":"text",Img:relationUser.Img});
+                            setTimeout(moveBottom, 80);
+                            return false;
+                        }
                     }
                 }
-                else{                        
-                    // 排序：未读置顶
-                    chat.chatArr.forEach(function(item,i){
-                        if(item.UserID==obj.ToUserID)
-                        {
-                            if(el.Message!="unread")
-                            {
-                                el.Message == "unread";                           
-                                var obj = item;
-                                chat.chatArr.removeAt(i);
-                                chat.chatArr.unshift(obj);
-                            }
-                        }
-                    })
-                }
+            }
 
+            //聊天用户是否存在
+            function IsExitsUser(toUserId,fromUserId)
+            {
+                var temp =null;
+                // 排序：未读置顶
+                chat.chatArr.forEach(function(item,i){
+                    if(item.UserID==toUserId)
+                    {
+                        if(item.Message!="unread")
+                        {
+                            item.Message == "unread";                           
+                            temp = item;
+                            chat.chatArr.removeAt(i);
+                            chat.chatArr.unshift(temp);
+                        }
+                    }
+                });
+                //新聊天用户
+                if(temp==null)
+                {
+                    $.ajax({
+                        url:"/chat/FindUser",
+                        data:{ id:fromUserId},
+                        success:function(data){
+                            if(data.Code==0)
+                            {
+                                chat.chatArr.unshift({ UserID: data.Result.ID,RelationID:data.Result.RelationID, Status:"online", Message:"unread", Img: data.Result.Img, Name: data.Result.Name });  
+                                popUp({
+                                    str: data.Result.Name+"给你发送了消息",
+                                    clickFn: function() {
+                                        chat.chatBack();
+                                    }
+                                });
+                            }
+
+                        }
+                    });
+                }
+                return temp==null;
             }
 
             //用户发送消息
             chatHub.client.NotifyHadSendMessage=function (obj)
             {
-                var isExits=false;
-                vm.messageArr.forEach(function(item,i){
-                    if(item.RecordID==obj.GuID)
-                    {
-                        isExits=true;
-                    }
-                });
-                if(!isExits)
+                //聊天用户是否存在
+                if(IsExitsUser(obj.ToUserID,obj.From))
                 {
-                    //当前正在聊天用户消息
-                    if(obj.From==userObj.ID)
-                    {
-                        if (obj.Message!== ' ') {
-                            // 发送消息
-                            vm.messageArr.push({ RecordID: obj.GuID, MStatus: "sended", MType: 'fr', Cont: obj.Message ,ContType:obj.isImages?"img":"text",Img:userObj.Img});
-                            setTimeout(moveBottom, 80);
-                            return false;
-                        }
-                    }}
+                    //正在聊天用户
+                    if(obj.ToUserID==userObj.ID)
+                    {             
+                        //判断是否自身发送消息
+                        var isExits=false;
+                        vm.messageArr.forEach(function(item,i){
+                            if(item.RecordID==obj.GuID)
+                            {
+                                isExits=true;
+                            }
+                        });
+                        if(!isExits)
+                        {
+                            chatHub.server.setReaded(relationUser.RelationID);
+                            if (obj.Message!== ' ') {
+                                // 发送消息
+                                vm.messageArr.push({ RecordID: obj.GuID, MStatus: "sended", MType: 'fr', Cont: obj.Message ,ContType:obj.isImages?"img":"text",Img:relationUser.Img});
+                                setTimeout(moveBottom, 80);
+                                return false;
+                            }}
+                    }
+                }
             }
             //提醒上线
             chatHub.client.NotifyOnLine=function (userId)
@@ -657,6 +702,8 @@
                 });
             }
         })
+
+
 
 
     </script>

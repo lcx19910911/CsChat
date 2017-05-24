@@ -31,7 +31,7 @@ namespace CsChat.IService
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        WebResult<bool> DeleteDeviceByUserID(int userId);
+        WebResult<bool> DeleteDeviceByUserID(int userId,string ip);
 
         /// <summary>
         /// 获取用户的聊天关系

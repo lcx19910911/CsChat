@@ -59,6 +59,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DbRepository.cs" />
+    <Compile Include="Migrations\201705240814359_222.cs" />
+    <Compile Include="Migrations\201705240814359_222.Designer.cs">
+      <DependentUpon>201705240814359_222.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -75,6 +79,11 @@
       <Project>{a82cb1b4-e599-4d0a-98dd-5870448cb7c4}</Project>
       <Name>CsChat.Model</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\201705240814359_222.resx">
+      <DependentUpon>201705240814359_222.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

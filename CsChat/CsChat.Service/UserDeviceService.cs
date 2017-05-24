@@ -96,7 +96,7 @@ namespace CsChat.Service
         /// </summary>
         /// <param name="userId"></param>
         /// <returns></returns>
-        public WebResult<bool> DeleteDeviceByUserID(int userId)
+        public WebResult<bool> DeleteDeviceByUserID(int userId,string ip)
         {
             if (userId <= 0)
             {
@@ -104,7 +104,7 @@ namespace CsChat.Service
             }
             else
             {
-                var result = Delete(x => x.UserID == userId);
+                var result = Delete(x => x.UserID == userId&&ip==x.IP);
                 if (result > 0)
                 {
                     return Result(true);

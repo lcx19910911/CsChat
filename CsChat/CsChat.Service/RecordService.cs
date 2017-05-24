@@ -33,8 +33,7 @@ namespace CsChat.Service
                 Content = imgUrl,
                 SendUserID= sendUserId,
                 SendTime = DateTime.Now,
-                CreatedTime = DateTime.Now,
-                UpdatedTime = DateTime.Now
+                CreatedTime = DateTime.Now
             });
             if (result > 0)
             {
@@ -67,8 +66,7 @@ namespace CsChat.Service
                     Content = content,
                     SendUserID = sendUserId,
                     SendTime = DateTime.Now,
-                    CreatedTime = DateTime.Now,
-                    UpdatedTime = DateTime.Now
+                    CreatedTime = DateTime.Now
                 });
                 if (result > 0)
                 {

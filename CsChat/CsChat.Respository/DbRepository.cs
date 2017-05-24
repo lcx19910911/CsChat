@@ -39,11 +39,8 @@ namespace CsChat.Repository
                         //初始化这些值，如果这些值为null时，自动赋值
                         if (entity.CreatedTime == new DateTime())
                             entity.CreatedTime = DateTime.Now;
-                        if (entity.UpdatedTime == new DateTime())
-                            entity.UpdatedTime = DateTime.Now;
                         break;
                     case EntityState.Modified:
-                        entity.UpdatedTime = DateTime.Now;
                         break;
                 }
             }

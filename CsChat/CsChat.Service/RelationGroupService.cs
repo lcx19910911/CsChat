@@ -19,7 +19,7 @@ namespace CsChat.Service
         /// <returns></returns>
         public WebResult<bool> Add(int userId, int toUserId)
         {
-            if (userId <= 0 || toUserId <= 0)
+            if (userId <= 0 || toUserId <= 0||userId==toUserId)
             {
                 return Result(false, ErrorCode.sys_param_format_error);
             }

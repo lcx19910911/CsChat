@@ -134,9 +134,11 @@ namespace CsChat.Web.Controllers
             if (user != null)
             {
                 SetRecGroup(userId);
-
-                user.IsOnLine = true;
-                IUserService.Update(user, userId);
+                if (IUserDeviceService.GetListByUserID(userId).Count == 0)
+                {
+                    user.IsOnLine = true;
+                    IUserService.Update(user, userId);
+                }
 
 
                 var relationList = IRelationGroupService.GetListByUserID(userId).OrderByDescending(x => x.LastTime).ToList();
@@ -188,15 +190,18 @@ namespace CsChat.Web.Controllers
                     //删除组
                     RemoveRecGroup(userId + "_" + x.ID);
                 });
-                IUserDeviceService.DeleteDeviceByUserID(userId);
+                IUserDeviceService.DeleteDeviceByUserID(userId,GetIp());
             }
             //修改登录用户状态
             var user = IUserService.Find(userId);
             if (user != null)
             {
-                user.IsOnLine = false;
-                IUserService.Update(user, userId);
-
+                //当前无设备联系
+                if (IUserDeviceService.GetListByUserID(userId).Count == 0)
+                {
+                    user.IsOnLine = false;
+                    IUserService.Update(user, userId);
+                }
                 var relationList = IRelationGroupService.GetListByUserID(userId).OrderByDescending(x => x.LastTime).ToList();
                 //用户集合 
                 var userIdList = relationList.Where(x => x.UserID == userId).Select(x => x.RelationUserID).ToList();
@@ -368,6 +373,22 @@ namespace CsChat.Web.Controllers
         {
             IRelationGroupService.Add(LoginUser.ID, toUserId);
             return RedirectToAction("Index");
+        }
+
+        /// <summary>
+        /// 加载聊天记录
+        /// </summary>
+        /// <param name="relationId"></param>
+        public ActionResult FindUser(int id)
+        {
+            var userResult = IUserService.Find(id);
+            if (userResult != null)
+            {
+                var relation = IRelationGroupService.Find(x => (x.UserID == id && x.RelationUserID == this.LoginUser.ID) || (x.UserID == this.LoginUser.ID && x.RelationUserID == id));
+                if(relation!=null)
+                    userResult.RelationID = relation.ID;
+            }
+            return JResult(userResult);
         }
     }
 }
